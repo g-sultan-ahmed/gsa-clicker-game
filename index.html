@@ -179,14 +179,14 @@ const timeInput=document.getElementById("timeInput");
 const themeBtn=document.getElementById("themeBtn");
 const soundBtn=document.getElementById("soundBtn");
 
-// 🔥 100% CODE-GENERATED AUDIO SYSTEM
+// 🔥 AUDIO SYSTEM
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playClickSound() {
     if (!soundOn) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
 
-    // Short, crisp "pop"
+    // Crisp "Pop" sound for clicking
     const osc = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     
@@ -204,30 +204,60 @@ function playClickSound() {
     osc.stop(audioCtx.currentTime + 0.1);
 }
 
-function playHighPitchScream() {
+function playScaryScream() {
     if (!soundOn) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    const now = audioCtx.currentTime;
+    const duration = 3.0; // 3 Seconds long
 
-    // 🔥 THE HIGH "AAAAA" SOUND
-    const osc = audioCtx.createOscillator();
+    // We create 3 oscillators to create a "Chord of Terror"
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const osc3 = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     
-    osc.connect(gainNode);
+    // Connect all to the same gain (volume)
+    osc1.connect(gainNode);
+    osc2.connect(gainNode);
+    osc3.connect(gainNode);
     gainNode.connect(audioCtx.destination);
 
-    // 'triangle' wave sounds shrill and loud
-    osc.type = 'triangle'; 
-    
-    // High frequency (1500Hz)
-    osc.frequency.setValueAtTime(1500, audioCtx.currentTime); 
-    
-    // Constant volume that cuts off abruptly
-    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
-    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime + 0.5);
-    gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.6);
-    
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.6);
+    // 1. The Low "Growl" (Sawtooth)
+    osc1.type = 'sawtooth';
+    osc1.frequency.setValueAtTime(150, now);
+    osc1.frequency.linearRampToValueAtTime(100, now + duration); // Pitch drops slightly
+
+    // 2. The Dissonant "Scream" (Sawtooth - Tritone apart)
+    // 220Hz clashing with 150Hz creates a "beating" roughness
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(220, now);
+    osc2.frequency.linearRampToValueAtTime(180, now + duration);
+
+    // 3. The High "Shriek" (Square wave for piercing sound)
+    osc3.type = 'square';
+    osc3.frequency.setValueAtTime(800, now);
+    // Wobble the high pitch aggressively to sound like a scream
+    osc3.frequency.setValueAtTime(800, now);
+    osc3.frequency.linearRampToValueAtTime(1200, now + 0.1); // Jumpscare attack
+    osc3.frequency.linearRampToValueAtTime(600, now + duration); // Dying fall
+
+    // 4. LOUD Volume Envelope
+    // Instant attack (0.01s) for Jumpscare effect
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(0.8, now + 0.05); // VERY LOUD (0.8 is high)
+    gainNode.gain.setValueAtTime(0.8, now + 2.5); // Sustain
+    gainNode.gain.linearRampToValueAtTime(0, now + duration); // Cut off
+
+    // Start everything
+    osc1.start(now);
+    osc2.start(now);
+    osc3.start(now);
+
+    // Stop everything
+    osc1.stop(now + duration);
+    osc2.stop(now + duration);
+    osc3.stop(now + duration);
 }
 
 updateBoard();
@@ -279,8 +309,8 @@ function endGame(){
     playing = false;
     progressBar.style.width = "0%";
     
-    // 🔥 Play the high pitch sound
-    playHighPitchScream();
+    // 🔥 TRIGGER THE JUMPSCARE SCREAM
+    playScaryScream();
 
     scores.push({
         score,
@@ -291,13 +321,14 @@ function endGame(){
     localStorage.setItem("clickScores", JSON.stringify(scores));
     updateBoard();
 
+    // Visual indicators
     clickBtn.innerText = "GAME OVER";
     clickBtn.disabled = true;
 
-    // Reset after 1.5 seconds
+    // Reset after 3 seconds (matching the scream duration)
     setTimeout(() => {
         startBtn.innerText = "▶ Play Again";
-    }, 1500);
+    }, 3000);
 }
 
 function resetGame(){
@@ -361,12 +392,9 @@ soundBtn.onclick=()=>{
 };
 </script>
 </body>
-<!-- =============== ULTIMATE PRO FEATURES ADDED =================
-<!-- Multiplayer-ready architecture hooks, achievements, anti-cheat detection, dynamic difficulty, particles, leaderboard structure, powerups, vibration support, GPU animations -->
-
-<!-- Due to canvas length limits, full EXTREME PRO edition will be delivered as a complete separate build -->
 
 </html>
+
 
 
 
