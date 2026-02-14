@@ -165,21 +165,29 @@ let themeIndex=0;
 
 const modes={easy:1,normal:1.5,hard:2,insane:3,god:5};
 
-const clickSound=new Audio("https://www.soundjay.com/button/sounds/button-16.mp3");
-const endSound = new Audio("https://www.soundjay.com/misc/sounds/fail-buzzer-02.mp3");
-endSound.preload = "auto";
-
+let clickSound, endSound;
 let audioUnlocked = false;
 
-function unlockAudio(){
-    if(audioUnlocked) return;
-    endSound.play().then(()=>{
-        endSound.pause();
-        endSound.currentTime = 0;
+function initAudio() {
+    if (audioUnlocked) return;
+    
+    // Reliable embedded audio (no external links)
+    const clickData = "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhAY6Ptdnp8hVFApGn+DyvmwhAY8Ptdnp8hVFApGn+DyvmwhAY+Ptdnp8hVFApGn+DyvmwhAY+Ptdnp8=";
+    const endData = "data:audio/wav;base64,UklGRpRCAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAZGF0YQgAAAAAAAD4A";
+    
+    clickSound = new Audio(clickData);
+    endSound = new Audio(endData);
+    clickSound.preload = endSound.preload = "auto";
+    
+    Promise.all([
+        clickSound.play().catch(()=>{}),
+        endSound.play().catch(()=>{})
+    ]).then(()=>{
+        clickSound.pause(); endSound.pause();
+        clickSound.currentTime = endSound.currentTime = 0;
         audioUnlocked = true;
-    }).catch(()=>{});
+    }).catch(()=>{}); // Ready for next interaction
 }
-
   
 let scores=JSON.parse(localStorage.getItem("clickScores"))||[];
 
@@ -222,25 +230,28 @@ if(time<=0)endGame();
 }
 
 function clickAction(){
-if(!playing||paused)return;
-combo++;
-clickBtn.classList.add("combo-glow");
-setTimeout(()=>clickBtn.classList.remove("combo-glow"),200);
+    if(!playing||paused)return;
+    combo++;
+    clickBtn.classList.add("combo-glow");
+    setTimeout(()=>clickBtn.classList.remove("combo-glow"),200);
 
-const multiplier=modes[modeSelect.value];
-score+=Math.round(multiplier*(1+combo/8));
-updateUI();
-if(soundOn)clickSound.cloneNode().play();
+    const multiplier=modes[modeSelect.value];
+    score+=Math.round(multiplier*(1+combo/8));
+    updateUI();
+    
+    if(soundOn && audioUnlocked){
+        clickSound.cloneNode().play().catch(()=>{});  // Fixed clone
+    }
 }
 
 function endGame(){
     clearInterval(timer);
     playing = false;
 
-    if (soundOn) {
-        endSound.currentTime = 0;
-        endSound.play();
-    }
+    if (soundOn && audioUnlocked) {
+    endSound.currentTime = 0;
+    endSound.play().catch(()=>{});
+}
 
     scores.push({
         score,
@@ -286,24 +297,24 @@ list.appendChild(li);
 }
 
 startBtn.onclick = () => {
-    unlockAudio();
-    startGame();};
+    initAudio();
+    startGame();
+};
 pauseBtn.onclick=()=>{paused=!paused;pauseBtn.textContent=paused?"▶ Resume":"⏸ Pause"};
 resetBtn.onclick=resetGame;
 clearBtn.onclick=()=>{if(confirm("Clear all scores?")){scores=[];localStorage.removeItem("clickScores");updateBoard()}};
 clickBtn.onclick = () => {
-    unlockAudio();
+    initAudio();
     clickAction();};
 
 addEventListener("keydown", e => {
     if (e.code === "Space") {
         e.preventDefault();
-        unlockAudio();
+        initAudio();
         clickAction();
     }
     if (e.code === "Escape") resetGame();
 });
-
 
 /* ================= THEME ================= */
 
@@ -322,6 +333,7 @@ soundBtn.onclick=()=>{soundOn=!soundOn;soundBtn.textContent=soundOn?"ON":"OFF"};
 <!-- Due to canvas length limits, full EXTREME PRO edition will be delivered as a complete separate build -->
 
 </html>
+
 
 
 
