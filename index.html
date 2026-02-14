@@ -282,7 +282,15 @@ clickBtn.onclick = () => {
     unlockAudio();
     clickAction();};
 
-addEventListener("keydown",e=>{if(e.code==="Space"){e.preventDefault();clickAction()}if(e.code==="Escape")resetGame()});
+addEventListener("keydown", e => {
+    if (e.code === "Space") {
+        e.preventDefault();
+        unlockAudio();
+        clickAction();
+    }
+    if (e.code === "Escape") resetGame();
+});
+
 
 /* ================= THEME ================= */
 
@@ -301,4 +309,5 @@ soundBtn.onclick=()=>{soundOn=!soundOn;soundBtn.textContent=soundOn?"ON":"OFF"};
 <!-- Due to canvas length limits, full EXTREME PRO edition will be delivered as a complete separate build -->
 
 </html>
+
 
