@@ -234,14 +234,27 @@ if(soundOn)clickSound.cloneNode().play();
 }
 
 function endGame(){
-clearInterval(timer);
-playing=false;
-if(soundOn)endSound.play();
+    clearInterval(timer);
+    playing = false;
 
-scores.push({score,mode:modeSelect.value,time:timeInput.value,date:new Date().toLocaleString()});
-localStorage.setItem("clickScores",JSON.stringify(scores));
-updateBoard();
-alert(`Game Over!\nScore: ${score}`);
+    if (soundOn) {
+        endSound.currentTime = 0;
+        endSound.play();
+    }
+
+    scores.push({
+        score,
+        mode: modeSelect.value,
+        time: timeInput.value,
+        date: new Date().toLocaleString()
+    });
+
+    localStorage.setItem("clickScores", JSON.stringify(scores));
+    updateBoard();
+
+    setTimeout(() => {
+        alert(`Game Over!\nScore: ${score}`);
+    }, 300);
 }
 
 function resetGame(){
@@ -309,5 +322,6 @@ soundBtn.onclick=()=>{soundOn=!soundOn;soundBtn.textContent=soundOn?"ON":"OFF"};
 <!-- Due to canvas length limits, full EXTREME PRO edition will be delivered as a complete separate build -->
 
 </html>
+
 
 
