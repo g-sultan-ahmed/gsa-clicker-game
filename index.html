@@ -179,14 +179,14 @@ const timeInput=document.getElementById("timeInput");
 const themeBtn=document.getElementById("themeBtn");
 const soundBtn=document.getElementById("soundBtn");
 
-// 🔥 ROBUST AUDIO SYSTEM (No external files needed)
+// 🔥 100% CODE-GENERATED AUDIO SYSTEM
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playClickSound() {
     if (!soundOn) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
 
-    // Crisp "Pop" sound
+    // Short, crisp "pop"
     const osc = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     
@@ -204,36 +204,36 @@ function playClickSound() {
     osc.stop(audioCtx.currentTime + 0.1);
 }
 
-function playBuzzer() {
+function playHighPitchScream() {
     if (!soundOn) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
 
-    // Harsh "Game Over" Buzzer
+    // 🔥 THE HIGH "AAAAA" SOUND
     const osc = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     
     osc.connect(gainNode);
     gainNode.connect(audioCtx.destination);
 
-    // Sawtooth wave creates a buzzy, mechanical sound
-    osc.type = 'sawtooth'; 
+    // 'triangle' wave sounds shrill and loud
+    osc.type = 'triangle'; 
     
-    // Slide pitch down (150Hz -> 50Hz) to sound like a failing engine/buzzer
-    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-    osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.8);
+    // High frequency (1500Hz)
+    osc.frequency.setValueAtTime(1500, audioCtx.currentTime); 
     
-    // Volume envelope
-    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+    // Constant volume that cuts off abruptly
+    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime + 0.5);
+    gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.6);
     
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.8);
+    osc.stop(audioCtx.currentTime + 0.6);
 }
 
 updateBoard();
 
 function startGame(){
-    // Initialize audio context on first interaction
+    // IMPORTANT: Unlock audio on the very first button press
     if (audioCtx.state === 'suspended') audioCtx.resume();
 
     clearInterval(timer);
@@ -270,7 +270,7 @@ function clickAction(){
     score+=Math.round(multiplier*(1+combo/8));
     updateUI();
     
-    // Play Click
+    // Play Click Pop
     playClickSound();
 }
 
@@ -279,8 +279,8 @@ function endGame(){
     playing = false;
     progressBar.style.width = "0%";
     
-    // 🔥 Play the generated Buzzer
-    playBuzzer();
+    // 🔥 Play the high pitch sound
+    playHighPitchScream();
 
     scores.push({
         score,
@@ -294,6 +294,7 @@ function endGame(){
     clickBtn.innerText = "GAME OVER";
     clickBtn.disabled = true;
 
+    // Reset after 1.5 seconds
     setTimeout(() => {
         startBtn.innerText = "▶ Play Again";
     }, 1500);
@@ -366,6 +367,7 @@ soundBtn.onclick=()=>{
 <!-- Due to canvas length limits, full EXTREME PRO edition will be delivered as a complete separate build -->
 
 </html>
+
 
 
 
