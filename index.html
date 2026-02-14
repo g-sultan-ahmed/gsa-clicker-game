@@ -179,44 +179,43 @@ const timeInput=document.getElementById("timeInput");
 const themeBtn=document.getElementById("themeBtn");
 const soundBtn=document.getElementById("soundBtn");
 
-// 🔥 AUDIO SYSTEM (Web Audio API - Works perfectly in Firefox/Chrome)
+// 🔥 AUDIO SYSTEM 
+// 1. Fast Synth for Clicking (Zero Latency)
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-function playSound(type) {
+// 2. Your Custom File for Game Over
+const endSound = new Audio("https://www.soundjay.com/misc/sounds/fail-buzzer-02.mp3");
+endSound.preload = "auto"; // Preload to avoid lag
+
+function playClickSound() {
     if (!soundOn) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
 
+    // Create a crisp 'pop' sound
     const osc = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
-
     osc.connect(gainNode);
     gainNode.connect(audioCtx.destination);
 
-    if (type === 'click') {
-        // High pitch short beep
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1);
-        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.1);
-    } else if (type === 'end') {
-        // Lower pitch "Game Over" slide
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-        osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.5);
-        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.5);
-    }
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1);
+    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.1);
 }
 
 updateBoard();
 
 function startGame(){
+    // Unlock audio context on first user interaction
     if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    // Reset any playing sounds
+    endSound.pause();
+    endSound.currentTime = 0;
+
     clearInterval(timer);
     score=0; combo=0;
     time=Number(timeInput.value);
@@ -227,6 +226,7 @@ function startGame(){
     progressBar.style.width='100%';
     clickBtn.innerText = "CLICK!";
     clickBtn.disabled = false;
+    startBtn.innerText = "▶ Restart";
 
     const total=time;
 
@@ -243,14 +243,13 @@ function clickAction(){
     if(!playing || paused) return;
     combo++;
     
-    // Visual effect
     clickBtn.classList.add("combo-glow");
     setTimeout(()=>clickBtn.classList.remove("combo-glow"), 200);
 
     const multiplier=modes[modeSelect.value];
     score+=Math.round(multiplier*(1+combo/8));
     updateUI();
-    playSound('click');
+    playClickSound();
 }
 
 function endGame(){
@@ -258,10 +257,13 @@ function endGame(){
     playing = false;
     progressBar.style.width = "0%";
     
-    // 1. Play Sound IMMEDIATELY
-    playSound('end');
+    // 🔥 PLAY YOUR CUSTOM SOUND
+    if (soundOn) {
+        endSound.currentTime = 0;
+        // The promise catch handles cases where the user hasn't interacted enough yet
+        endSound.play().catch(e => console.log("Audio play failed:", e)); 
+    }
 
-    // 2. Update Data
     scores.push({
         score,
         mode: modeSelect.value,
@@ -271,17 +273,14 @@ function endGame(){
     localStorage.setItem("clickScores", JSON.stringify(scores));
     updateBoard();
 
-    // 3. custom Visual "Game Over" (Replaces Alert)
+    // Visual Game Over (Replaces Alert to prevent audio cutting)
     clickBtn.innerText = "GAME OVER";
     clickBtn.disabled = true;
 
-    // Use a non-blocking timeout to reset UI, 
-    // prevents the audio from being cut by a native alert
+    // Reset button text after 1.5 seconds
     setTimeout(() => {
-        // Optional: You can put a confirm() here if you really want, 
-        // but checking the "Start" button text is better UX.
         startBtn.innerText = "▶ Play Again";
-    }, 1000);
+    }, 1500);
 }
 
 function resetGame(){
@@ -292,6 +291,8 @@ function resetGame(){
     clickBtn.innerText = "CLICK";
     clickBtn.disabled = false;
     startBtn.innerText = "▶ Start";
+    endSound.pause();
+    endSound.currentTime = 0;
     updateUI();
 }
 
@@ -321,7 +322,7 @@ pauseBtn.onclick=()=>{paused=!paused;pauseBtn.textContent=paused?"▶ Resume":"�
 resetBtn.onclick=resetGame;
 clearBtn.onclick=()=>{if(confirm("Clear all scores?")){scores=[];localStorage.removeItem("clickScores");updateBoard()}};
 
-clickBtn.onmousedown = clickAction; // Better response time than onclick
+clickBtn.onmousedown = clickAction; 
 
 addEventListener("keydown", e => {
     if (e.code === "Space") {
@@ -351,6 +352,7 @@ soundBtn.onclick=()=>{
 <!-- Due to canvas length limits, full EXTREME PRO edition will be delivered as a complete separate build -->
 
 </html>
+
 
 
 
