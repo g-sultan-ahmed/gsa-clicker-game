@@ -166,8 +166,21 @@ let themeIndex=0;
 const modes={easy:1,normal:1.5,hard:2,insane:3,god:5};
 
 const clickSound=new Audio("https://www.soundjay.com/button/sounds/button-16.mp3");
-const endSound=new Audio("https://www.soundjay.com/misc/sounds/fail-buzzer-02.mp3");
+const endSound = new Audio("https://www.soundjay.com/misc/sounds/fail-buzzer-02.mp3");
+endSound.preload = "auto";
 
+let audioUnlocked = false;
+
+function unlockAudio(){
+    if(audioUnlocked) return;
+    endSound.play().then(()=>{
+        endSound.pause();
+        endSound.currentTime = 0;
+        audioUnlocked = true;
+    }).catch(()=>{});
+}
+
+  
 let scores=JSON.parse(localStorage.getItem("clickScores"))||[];
 
 const scoreEl=document.getElementById("score");
@@ -259,11 +272,15 @@ list.appendChild(li);
 });
 }
 
-startBtn.onclick=startGame;
+startBtn.onclick = () => {
+    unlockAudio();
+    startGame();};
 pauseBtn.onclick=()=>{paused=!paused;pauseBtn.textContent=paused?"▶ Resume":"⏸ Pause"};
 resetBtn.onclick=resetGame;
 clearBtn.onclick=()=>{if(confirm("Clear all scores?")){scores=[];localStorage.removeItem("clickScores");updateBoard()}};
-clickBtn.onclick=clickAction;
+clickBtn.onclick = () => {
+    unlockAudio();
+    clickAction();};
 
 addEventListener("keydown",e=>{if(e.code==="Space"){e.preventDefault();clickAction()}if(e.code==="Escape")resetGame()});
 
@@ -284,3 +301,4 @@ soundBtn.onclick=()=>{soundOn=!soundOn;soundBtn.textContent=soundOn?"ON":"OFF"};
 <!-- Due to canvas length limits, full EXTREME PRO edition will be delivered as a complete separate build -->
 
 </html>
+
