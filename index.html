@@ -179,42 +179,62 @@ const timeInput=document.getElementById("timeInput");
 const themeBtn=document.getElementById("themeBtn");
 const soundBtn=document.getElementById("soundBtn");
 
-// 🔥 AUDIO SYSTEM 
-// 1. Fast Synth for Clicking (Zero Latency)
+// 🔥 ROBUST AUDIO SYSTEM (No external files needed)
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-// 2. Your Custom File for Game Over
-const endSound = new Audio("https://www.soundjay.com/misc/sounds/fail-buzzer-02.mp3");
-endSound.preload = "auto"; // Preload to avoid lag
 
 function playClickSound() {
     if (!soundOn) return;
     if (audioCtx.state === 'suspended') audioCtx.resume();
 
-    // Create a crisp 'pop' sound
+    // Crisp "Pop" sound
     const osc = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
+    
     osc.connect(gainNode);
     gainNode.connect(audioCtx.destination);
 
     osc.type = 'sine';
     osc.frequency.setValueAtTime(800, audioCtx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1);
+    
     gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    
     osc.start();
     osc.stop(audioCtx.currentTime + 0.1);
+}
+
+function playBuzzer() {
+    if (!soundOn) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    // Harsh "Game Over" Buzzer
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    // Sawtooth wave creates a buzzy, mechanical sound
+    osc.type = 'sawtooth'; 
+    
+    // Slide pitch down (150Hz -> 50Hz) to sound like a failing engine/buzzer
+    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+    osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.8);
+    
+    // Volume envelope
+    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.8);
 }
 
 updateBoard();
 
 function startGame(){
-    // Unlock audio context on first user interaction
+    // Initialize audio context on first interaction
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    
-    // Reset any playing sounds
-    endSound.pause();
-    endSound.currentTime = 0;
 
     clearInterval(timer);
     score=0; combo=0;
@@ -249,6 +269,8 @@ function clickAction(){
     const multiplier=modes[modeSelect.value];
     score+=Math.round(multiplier*(1+combo/8));
     updateUI();
+    
+    // Play Click
     playClickSound();
 }
 
@@ -257,12 +279,8 @@ function endGame(){
     playing = false;
     progressBar.style.width = "0%";
     
-    // 🔥 PLAY YOUR CUSTOM SOUND
-    if (soundOn) {
-        endSound.currentTime = 0;
-        // The promise catch handles cases where the user hasn't interacted enough yet
-        endSound.play().catch(e => console.log("Audio play failed:", e)); 
-    }
+    // 🔥 Play the generated Buzzer
+    playBuzzer();
 
     scores.push({
         score,
@@ -273,11 +291,9 @@ function endGame(){
     localStorage.setItem("clickScores", JSON.stringify(scores));
     updateBoard();
 
-    // Visual Game Over (Replaces Alert to prevent audio cutting)
     clickBtn.innerText = "GAME OVER";
     clickBtn.disabled = true;
 
-    // Reset button text after 1.5 seconds
     setTimeout(() => {
         startBtn.innerText = "▶ Play Again";
     }, 1500);
@@ -291,8 +307,6 @@ function resetGame(){
     clickBtn.innerText = "CLICK";
     clickBtn.disabled = false;
     startBtn.innerText = "▶ Start";
-    endSound.pause();
-    endSound.currentTime = 0;
     updateUI();
 }
 
@@ -352,6 +366,7 @@ soundBtn.onclick=()=>{
 <!-- Due to canvas length limits, full EXTREME PRO edition will be delivered as a complete separate build -->
 
 </html>
+
 
 
 
